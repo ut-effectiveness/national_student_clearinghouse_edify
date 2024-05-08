@@ -1,0 +1,219 @@
+---
+title: "nsc_upload"
+author: "Candi"
+date: "2024-05-08"
+output: html_document
+---
+
+## Libraries
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+library(utHelpR)
+library(janitor)
+library(here)
+library(tidyverse)
+library(readxl)
+library(lubridate)
+library(tidyr)
+library(dplyr)
+```
+
+## Define Cohort from Banner and Slate
+### Pull Data from Edify Table nsc_upload
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+nsc_from_edify_enrolled <- utHelpR::get_data_from_sql_file('nsc_from_edify_enrolled.sql','edify','project')
+nsc_from_edify_applicant <- utHelpR::get_data_from_sql_file('edify_applicant.sql','edify','project')
+nsc_from_edify_inquiry <- utHelpR::get_data_from_sql_file('nsc_from_edify_inquiry.sql','edify','project')
+nsc_from_edify_prospect <- utHelpR::get_data_from_sql_file('nsc_from_edify_prospect.sql','edify','project')
+```
+
+## Declare Variables for NSC Submission File
+### Variables
+```{r}
+school_code <- '003671'
+branch_code <- '00'
+school_name <- 'Utah Tech University'
+query_option <- 'SE'
+```
+
+### Record Type and Variables for NSC Header
+### Header for submission file
+```{r}
+header <- tibble(header = 'H1',
+                 school_code = school_code,
+                 branch_code = branch_code,
+                 school_name = str_pad(school_name, width = 20, side = "right"),
+                 file_creation_date = str_remove_all(today(), "-"),
+                 query_option = query_option,
+                 institution = 'I'
+                 )
+```
+
+
+## Function to change last names that are "." to NA
+```{r}
+change_last_name <- function(input_df){
+  output_df <- input_df %>% 
+  mutate(last_name = if_else(last_name == ".", NA, last_name))
+  
+  return(output_df)
+}
+```
+
+## Run files through to update last name from . to NA
+```{r}
+edify_enrolled <- change_last_name(nsc_from_edify_enrolled)
+edify_applicant <- change_last_name(nsc_from_edify_applicant)
+edify_inquiry <- change_last_name(nsc_from_edify_inquiry)
+edify_prospect <- change_last_name(nsc_from_edify_prospect)
+```
+
+
+## Create Enrolled file for upload
+```{r}
+enrolled_file <- edify_enrolled %>% 
+  mutate(
+    detail_records = 'D1',
+    ssn = str_pad(' ',9),
+    first_name = str_sub(str_pad(str_remove_all(first_name, "[-,.*()`']"), 20, side = 'right'), 1, 20),
+    middle_initial = replace_na(substr(str_remove_all(middle_initial, "."), 1, 1), ''),
+    last_name =  str_sub(str_pad(replace_na(str_remove_all(last_name, "[-,.*()`']"), NA), 20, side = 'right'), 1, 20),
+    suffix = str_pad(replace_na(str_remove_all(name_suffix,"[-,.']"), ''), 5, side = 'right'), 
+    birth_date = str_pad(replace_na(str_remove_all(birth_date, "-"),NA), 18 , side = 'left'),
+    term_end_date = str_remove_all(term_end_date, "-"),
+    blank_column = '',
+    school_code = school_code,
+    branch_code = branch_code,
+    requester_return_field = nsc_id,
+    unique_id = duplicated(requester_return_field)
+  ) %>%
+   select (detail_records, ssn, first_name, middle_initial, last_name, suffix, birth_date, term_end_date, blank_column, school_code, branch_code, requester_return_field)
+```
+
+## Function to create files for upload
+```{r}
+create_edify_file <- function(input_df){
+  output_df <- input_df %>% 
+  mutate(
+    detail_records = 'D1',
+    ssn = str_pad(' ',9),
+    first_name = str_sub(str_pad(str_remove_all(first_name, "[-,.*()`']"), 20, side = 'right'), 1, 20),
+    middle_initial = replace_na(substr(str_remove_all(middle_initial, "."), 1, 1), ''),
+    last_name =  str_sub(str_pad(replace_na(str_remove_all(last_name, "[-,.*()`']"), NA), 20, side = 'right'), 1, 20),
+    suffix = str_pad(replace_na(str_remove_all(name_suffix,"[-,.']"), ''), 5, side = 'right'), 
+    birth_date = str_pad(replace_na(str_remove_all(birth_date, "-"),NA), 18 , side = 'left'),
+    term_start_date = str_remove_all(term_start_date, "-"),
+    blank_column = '',
+    school_code = school_code,
+    branch_code = branch_code,
+    requester_return_field = nsc_id,
+    unique_id = duplicated(requester_return_field)
+  ) %>%
+   select (detail_records, ssn, first_name, middle_initial, last_name, suffix, birth_date, term_start_date, blank_column, school_code, branch_code, requester_return_field)
+  
+  return(output_df)
+}
+```
+
+## Run files through function to create files.
+```{r}
+applicant_file <- create_edify_file(edify_applicant)
+inquiry_file <- create_edify_file(edify_inquiry)
+prospect_file <- create_edify_file(edify_prospect)
+```
+
+## Drop rows with NA birthdate and last_name.
+```{r}
+drop_edify_fields <- function(input_df){
+  output_df <- input_df %>% 
+  drop_na(birth_date) %>% 
+  drop_na(last_name) 
+ 
+  return(output_df)
+}
+```
+
+## Run files through function to drop NA birthdates and last names.
+```{r}
+enrolled <- drop_edify_fields(enrolled_file)
+applicant <- drop_edify_fields(applicant_file)
+inquiry <- drop_edify_fields(inquiry_file)
+prospect <- drop_edify_fields(prospect_file)
+```
+
+
+
+### Record Type and Count for NSC Enrolled Trailer
+### Trailer for enrolled submission file
+```{r}
+trailer <- tibble(trailer = 'T1',
+                  records = nrow(enrolled) + 2
+                  )
+```
+
+## Generate NSC Enrolled File
+```{r}
+file_name <- "se_loa_nsc_enr_upload.tsv"
+file_path <- here::here('/Volumes/Share/Research/National Student Clearing House/May 2024/')
+
+write_tsv(header, paste0(file_path, file_name), col_names = FALSE, na = '')
+write_tsv(enrolled, paste0(file_path, file_name), append = TRUE, na = '')
+write_tsv(trailer, paste0(file_path, file_name), append = TRUE, na = '')
+```
+
+
+### Record Type and Count for NSC Applicant Trailer
+### Trailer for applicant submission file
+```{r}
+trailer <- tibble(trailer = 'T1',
+                  records = nrow(applicant) + 2
+                  )
+```
+
+## Generate NSC Applicant File
+```{r}
+file_name <- "sa_loa_nsc_app_upload.tsv"
+file_path <- here::here('/Volumes/Share/Research/National Student Clearing House/May 2024/')
+
+write_tsv(header, paste0(file_path, file_name), col_names = FALSE, na = '')
+write_tsv(applicant, paste0(file_path, file_name), append = TRUE, na = '')
+write_tsv(trailer, paste0(file_path, file_name), append = TRUE, na = '')
+```
+
+
+### Record Type and Count for NSC Inquiry Trailer
+### Trailer for inquiry submission file
+```{r}
+trailer <- tibble(trailer = 'T1',
+                  records = nrow(inquiry) + 2
+                  )
+```
+
+## Generate NSC Inquiry File
+```{r}
+file_name <- "si_loa_nsc_inq_upload.tsv"
+file_path <- here::here('/Volumes/Share/Research/National Student Clearing House/May 2024/')
+
+write_tsv(header, paste0(file_path, file_name), col_names = FALSE, na = '')
+write_tsv(inquiry, paste0(file_path, file_name), append = TRUE, na = '')
+write_tsv(trailer, paste0(file_path, file_name), append = TRUE, na = '')
+```
+
+
+### Record Type and Count for NSC ProspectTrailer
+### Trailer for prospect submission file
+```{r}
+trailer <- tibble(trailer = 'T1',
+                  records = nrow(prospect) + 2
+                  )
+```
+
+## Generate NSC Prospect File
+```{r}
+file_name <- "sp_loa_nsc_pro_upload.tsv"
+file_path <- here::here('/Volumes/Share/Research/National Student Clearing House/May 2024/')
+
+write_tsv(header, paste0(file_path, file_name), col_names = FALSE, na = '')
+write_tsv(prospect, paste0(file_path, file_name), append = TRUE, na = '')
+write_tsv(trailer, paste0(file_path, file_name), append = TRUE, na = '')
+```
+

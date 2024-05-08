@@ -1,0 +1,80 @@
+---
+title: "edify_upload"
+author: "Candi"
+date: "2024-05-08"
+output: html_document
+---
+## Libraries
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+library(utHelpR)
+library(janitor)
+library(here)
+library(tidyverse)
+library(readxl)
+library(lubridate)
+library(tidyr)
+library(dplyr)
+library(devtools)
+```
+
+## Load Return Files
+```{r}
+nsc_enrolled <- read.csv("/Volumes/Share/Research/National Student Clearing House/May 2024/05072024115223_se_loa_nsc_enr_upload.csv")
+nsc_applicant <- read.csv("/Volumes/Share/Research/National Student Clearing House/May 2024/05072024115223_se_loa_nsc_app_upload.csv")
+nsc_inquiry <- read.csv("/Volumes/Share/Research/National Student Clearing House/May 2024/05072024115223_se_loa_nsc_inq_upload.csv")
+nsc_prospect <- read.csv("/Volumes/Share/Research/National Student Clearing House/May 2024/05072024115223_se_loa_nsc_pro_upload.csv")
+```
+
+
+## Function to standardize return csv files
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+clean_return_files <- function(input_df){
+    output_df <- input_df %>% 
+    janitor::clean_names() %>% 
+    select(your_unique_identifier, first_name, middle_initial, last_name, name_suffix, requester_return_field, record_found_y_n, search_date, college_code_branch, college_name, college_state, x2_year_4_year, public_private, enrollment_begin, enrollment_end, enrollment_status, class_level, enrollment_major_1, enrollment_cip_1, enrollment_major_2, enrollment_cip_2, graduated, graduation_date, degree_title, degree_major_1, degree_cip_1, degree_major_2, degree_cip_2, degree_major_3, degree_cip_3, degree_major_4, degree_cip_4, college_sequence) %>% 
+  mutate(your_unique_identifier = if_else( 
+    substr(requester_return_field, 1, 2) == 'BE',
+    substr(requester_return_field, 4, 11),
+    substr(requester_return_field, 3, 11)))%>% 
+  mutate(x2_year_4_year = as.character(x2_year_4_year)) %>% 
+  rename(two_year_four_year = x2_year_4_year) %>% 
+  mutate(degree_cip_1 = as.character(degree_cip_1)) %>% 
+  mutate(degree_cip_2 = as.character(degree_cip_2)) %>% 
+  mutate(degree_cip_3 = as.character(degree_cip_3)) %>% 
+  mutate(degree_cip_4 = as.character(degree_cip_4)) %>% 
+  mutate(nsc_key = paste(requester_return_field, search_date, stringr::str_remove_all(as.character(lubridate::today()), "-"), row_number(), sep = "-"))
+  
+  return(output_df)
+}
+```
+
+## Run returned files through function 
+```{r}
+enrolled <- clean_return_files(nsc_enrolled)
+applicant <- clean_return_files(nsc_applicant) 
+inquiry <- clean_return_files(nsc_inquiry) 
+prospect <- clean_return_files(nsc_prospect)
+```
+
+## Union First Two Returned Files 
+```{r}
+nsc_1 <- union_all(applicant, enrolled)
+```
+
+## Union Second Two Returned Files 
+```{r}
+nsc_2 <- union_all(prospect, inquiry)
+```
+
+## Union First to Second
+```{r}
+nsc_upload <- union_all(nsc_1, nsc_2) 
+```
+
+## Generate NSC Upload to Edify File
+```{r}
+file_name <- "nsc_upload.csv"
+file_path <- here::here('/Volumes/Share/Research/National Student Clearing House/May 2024/')
+
+write_csv(nsc_upload, paste0(file_path, file_name), append = TRUE, col_names = TRUE , na = '')
+```
