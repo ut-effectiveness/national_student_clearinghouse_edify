@@ -11,8 +11,6 @@ SELECT first_name,
   MAX(term_end_date) AS term_end_date
 FROM export.nsc_upload
 WHERE student_status = 'Enrolled'
--- remove enrolled that have stopped out in the last 65 days
-AND term_end_date < CURRENT_DATE - 65
 -- remove enrolled less than 16 years old
 AND birth_date < CURRENT_DATE - 5840
 AND nullif(last_name,'') is not null
