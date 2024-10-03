@@ -4,6 +4,10 @@ author: "Candi"
 date: "2024-05-08"
 output: html_document
 ---
+
+## Prior to running all code chunks make sure you are connected to /Share/Research/National Student Clearing House
+
+
 ## Libraries
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 library(utHelpR)
@@ -17,12 +21,14 @@ library(dplyr)
 library(devtools)
 ```
 
+
+
 ## Load Return Files
 ```{r}
-nsc_enrolled <- read.csv("/Volumes/Share/Research/National Student Clearing House/May 2024/05072024115223_se_loa_nsc_enr_upload.csv")
-nsc_applicant <- read.csv("/Volumes/Share/Research/National Student Clearing House/May 2024/05072024115223_se_loa_nsc_app_upload.csv")
-nsc_inquiry <- read.csv("/Volumes/Share/Research/National Student Clearing House/May 2024/05072024115223_se_loa_nsc_inq_upload.csv")
-nsc_prospect <- read.csv("/Volumes/Share/Research/National Student Clearing House/May 2024/05072024115223_se_loa_nsc_pro_upload.csv")
+nsc_enrolled <- read.csv("/Volumes/Share/Research/National Student Clearing House/nsc_return_files/05072024115223_se_loa_nsc_enr_upload.csv")
+nsc_applicant <- read.csv("/Volumes/Share/Research/National Student Clearing House/nsc_return_files/05072024115223_se_loa_nsc_app_upload.csv")
+nsc_inquiry <- read.csv("/Volumes/Share/Research/National Student Clearing House/nsc_return_files/05072024115223_se_loa_nsc_inq_upload.csv")
+nsc_prospect <- read.csv("/Volumes/Share/Research/National Student Clearing House/nsc_return_files/05072024115223_se_loa_nsc_pro_upload.csv")
 ```
 
 
