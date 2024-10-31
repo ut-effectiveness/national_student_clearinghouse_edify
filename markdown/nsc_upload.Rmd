@@ -23,7 +23,7 @@ library(dplyr)
 ### Pull Data from Edify Table nsc_upload
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 nsc_from_edify_enrolled <- utHelpR::get_data_from_sql_file('nsc_from_edify_enrolled.sql','edify','project')
-nsc_from_edify_applicant <- utHelpR::get_data_from_sql_file('edify_applicant.sql','edify','project')
+nsc_from_edify_applicant <- utHelpR::get_data_from_sql_file('nsc_from_edify_applicant.sql','edify','project')
 nsc_from_edify_inquiry <- utHelpR::get_data_from_sql_file('nsc_from_edify_inquiry.sql','edify','project')
 nsc_from_edify_prospect <- utHelpR::get_data_from_sql_file('nsc_from_edify_prospect.sql','edify','project')
 ```

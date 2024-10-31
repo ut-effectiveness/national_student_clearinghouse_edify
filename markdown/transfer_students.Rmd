@@ -21,5 +21,10 @@ library(dplyr)
 
 ## Load Return Files
 ```{r}
-nsc_outcomes <- utHelpR::get_data_from_sql_file('nsc_outcomes.sql','edify','project')
+nsc_outcomes_df <- utHelpR::get_data_from_sql_file('nsc_outcomes.sql','edify','project')
 ```
+
+```{r}
+transfer_university_df <- nsc_outcomes_df
+```
+
