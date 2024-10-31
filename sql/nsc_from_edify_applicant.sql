@@ -1,5 +1,3 @@
--- !preview conn=DBI::dbConnect(RSQLite::SQLite())
-
 --pull data from Edify
 
 SELECT first_name,

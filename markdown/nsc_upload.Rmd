@@ -5,7 +5,7 @@ date: "2024-05-08"
 output: html_document
 ---
 
-## Prior to running all code chunks make sure you are connected to /Share/Research/National Student Clearing House, add a folder with the month and year and update the folder on lines 159, 177, 196, and 215.  These files should be uploaded to the National Student Clearing House in the Fall after October 15th and in the Spring after March 1st.
+## Prior to running all code chunks make sure you are connected to /Share/Research/National Student Clearing House, add a folder with the month and year and update the folder on lines 159, 177, 196, and 215.  These files should be uploaded to the National Student Clearing House in the Fall after October 31st and in the Spring after March 15th.
 
 ## Libraries
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
@@ -155,7 +155,7 @@ trailer <- tibble(trailer = 'T1',
 ## Generate NSC Enrolled File
 ```{r}
 file_name <- "se_loa_nsc_enr_upload.tsv"
-file_path <- here::here('/Volumes/Share/Research/National Student Clearing House/Oct 2024/')
+file_path <- here::here('/Volumes/Share/Research/National Student Clearing House/202440/')
 
 write_tsv(header, paste0(file_path, file_name), col_names = FALSE, na = '')
 write_tsv(enrolled, paste0(file_path, file_name), append = TRUE, na = '')
@@ -174,7 +174,7 @@ trailer <- tibble(trailer = 'T1',
 ## Generate NSC Applicant File
 ```{r}
 file_name <- "sa_loa_nsc_app_upload.tsv"
-file_path <- here::here('/Volumes/Share/Research/National Student Clearing House/Oct 2024/')
+file_path <- here::here('/Volumes/Share/Research/National Student Clearing House/202440/')
 
 write_tsv(header, paste0(file_path, file_name), col_names = FALSE, na = '')
 write_tsv(applicant, paste0(file_path, file_name), append = TRUE, na = '')
@@ -193,7 +193,7 @@ trailer <- tibble(trailer = 'T1',
 ## Generate NSC Inquiry File
 ```{r}
 file_name <- "si_loa_nsc_inq_upload.tsv"
-file_path <- here::here('/Volumes/Share/Research/National Student Clearing House/Oct 2024/')
+file_path <- here::here('/Volumes/Share/Research/National Student Clearing House/202440/')
 
 write_tsv(header, paste0(file_path, file_name), col_names = FALSE, na = '')
 write_tsv(inquiry, paste0(file_path, file_name), append = TRUE, na = '')
@@ -212,7 +212,7 @@ trailer <- tibble(trailer = 'T1',
 ## Generate NSC Prospect File
 ```{r}
 file_name <- "sp_loa_nsc_pro_upload.tsv"
-file_path <- here::here('/Volumes/Share/Research/National Student Clearing House/Oct 2024/')
+file_path <- here::here('/Volumes/Share/Research/National Student Clearing House/202440/')
 
 write_tsv(header, paste0(file_path, file_name), col_names = FALSE, na = '')
 write_tsv(prospect, paste0(file_path, file_name), append = TRUE, na = '')
