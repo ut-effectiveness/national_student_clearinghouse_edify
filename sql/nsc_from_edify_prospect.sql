@@ -11,6 +11,8 @@ SELECT first_name,
 FROM export.nsc_upload
 -- remove prospects less than 16 years old
 WHERE birth_date < CURRENT_DATE - 5840
+--removes future start dates
+AND term_start_date <= CURRENT_DATE
 AND nullif(last_name,'') is not null
 AND student_status = 'Prospect'
 AND student_status != 'Inquiry'

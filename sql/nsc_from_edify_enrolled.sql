@@ -12,6 +12,8 @@ FROM export.nsc_upload
 WHERE student_status = 'Enrolled'
 -- remove enrolled less than 16 years old
 AND birth_date < CURRENT_DATE - 5840
+--removes future start dates
+AND term_start_date <= CURRENT_DATE
 AND nullif(last_name,'') is not null
 GROUP BY first_name,
   middle_initial,
