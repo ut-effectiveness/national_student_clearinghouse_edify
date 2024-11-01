@@ -7,7 +7,10 @@ SELECT first_name,
   birth_date,
   nsc_id,
   term_id,
-  MAX(term_end_date) AS term_end_date
+  -- updates term end date to current date for current term drop/stop out students
+  CASE WHEN MAX(term_end_date) > CURRENT_DATE THEN CURRENT_DATE - 1
+      ELSE MAX(term_end_date)
+  END AS term_end_date
 FROM export.nsc_upload
 WHERE student_status = 'Enrolled'
 -- remove enrolled less than 16 years old
@@ -22,4 +25,3 @@ GROUP BY first_name,
   birth_date,
   nsc_id,
   term_id;
-
