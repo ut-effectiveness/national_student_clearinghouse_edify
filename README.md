@@ -36,6 +36,8 @@ Open nsc_upload.rmd and run all the code chunks.  It will produce four files: en
 ## Uploading the file to NSC
 Sign into NSC https://www.studentclearinghouse.org/ using the FTP login.  Upload the four files, an email is sent to Andrea Bringhurst at UT with a subject of Delivery Receipt for (name of file) one for each file uploaded. A second email is sent to UT with a subject of StudentTracker File Accepted for Organization ID 003671-00 to let you know if your file was accepted or rejected with the errors/warnings. A third email is sent to UT with a subject of New Files Notification to let you know that you can download the files.  There are three files for each uploaded file.  The AGGRRPT file is a STUDENTTRACKER AGGREGATE REPORT: ANALYSIS OF INITIAL TRANSFERS, we are not currently using this file in Edify. The CNTLRPT file is an htm file with information similar to the AGGRRPT file, we are not currently using this file in Edify.  We use the DETLRPT file to produce the upload for Edify. Download this file to the shared drive in the National Student Clearing House folder.  I shorten the file name and save them to the folder on the shared drive.
 
+Files will be uploaded the first week of November and the third week of March.
+
 
 ## Return file preparation to upload to Edify
 Open edify_upload.rmd -> verify the file name and folder under ## Load Return Files and ## Generate NSC Upload to Edify File (You will need to update if you created a new folder for the downloaded files.).  Run all code chunks, this will produce one file to be loaded into Edify.
