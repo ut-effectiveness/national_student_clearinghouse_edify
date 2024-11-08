@@ -5,7 +5,6 @@ date: "2024-05-08"
 output: html_document
 ---
 
-## Prior to running all code chunks make sure you are connected to /Share/Research/National Student Clearing House
 
 
 ## Libraries
@@ -21,14 +20,15 @@ library(dplyr)
 library(devtools)
 ```
 
-
+## Prior to running all code chunks make sure you are connected to /Share/Research/National Student Clearing House and have saved the returned files in the nsc_return_files directory. Update the file names with the newly returned file names before running the next code chunk.
 
 ## Load Return Files
 ```{r}
-nsc_enrolled <- read.csv("/Volumes/Share/Research/National Student Clearing House/nsc_return_files/05072024115223_se_loa_nsc_enr_upload.csv")
-nsc_applicant <- read.csv("/Volumes/Share/Research/National Student Clearing House/nsc_return_files/05072024115223_se_loa_nsc_app_upload.csv")
-nsc_inquiry <- read.csv("/Volumes/Share/Research/National Student Clearing House/nsc_return_files/05072024115223_se_loa_nsc_inq_upload.csv")
-nsc_prospect <- read.csv("/Volumes/Share/Research/National Student Clearing House/nsc_return_files/05072024115223_se_loa_nsc_pro_upload.csv")
+nsc_enrolled <- read.csv("/Volumes/Share/Research/National Student Clearing House/nsc_return_files/003671es_598974_DETLRPT_SE_11012024125341_se_loa_nsc_enr_upload.csv")
+nsc_applicant <- read.csv("/Volumes/Share/Research/National Student Clearing House/nsc_return_files/003671es_598938_DETLRPT_SE_11012024121858_sa_loa_nsc_app_upload.csv")
+nsc_inquiry <- read.csv("/Volumes/Share/Research/National Student Clearing House/nsc_return_files/003671es_598962_DETLRPT_SE_11012024122313_si_loa_nsc_inq_upload.csv")
+nsc_prospect <- read.csv("/Volumes/Share/Research/National Student Clearing House/nsc_return_files/003671es_598963_DETLRPT_SE_11012024124936_sp_loa_nsc_pro_upload.csv")
+student_id <- utHelpR::get_data_from_sql_file('student_id.sql','edify','project')
 ```
 
 
@@ -65,16 +65,18 @@ prospect <- clean_return_files(nsc_prospect)
 ## Union First Two Returned Files 
 ```{r}
 nsc_1 <- union_all(applicant, enrolled)
-```
 
-## Union Second Two Returned Files 
-```{r}
 nsc_2 <- union_all(prospect, inquiry)
-```
 
-## Union First to Second
-```{r}
-nsc_upload <- union_all(nsc_1, nsc_2) 
+nsc_upload <- union_all(nsc_1, nsc_2) %>% 
+  left_join(student_id, join_by(your_unique_identifier == prospect_id)) %>% 
+  mutate(sis_system_id = coalesce(student_id, your_unique_identifier)) %>% 
+  rename(student_id_2 = your_unique_identifier) %>% 
+  rename(your_unique_identifier = sis_system_id) %>% 
+  relocate(your_unique_identifier, .before = student_id_2) %>% 
+  select(!student_id_2) %>% 
+  select(!student_id) %>% 
+  mutate_at(c('search_date','enrollment_begin','enrollment_end','enrollment_cip_1','enrollment_cip_2','graduation_date','college_sequence'), as.character)
 ```
 
 ## Generate NSC Upload to Edify File
