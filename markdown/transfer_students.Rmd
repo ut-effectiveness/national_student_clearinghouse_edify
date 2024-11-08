@@ -25,6 +25,35 @@ nsc_outcomes_df <- utHelpR::get_data_from_sql_file('nsc_outcomes.sql','edify','p
 ```
 
 ```{r}
-transfer_university_df <- nsc_outcomes_df
+transfer_university_df <- nsc_outcomes_df %>% 
+  filter(college_code_branch != '003671-00') %>% 
+  drop_na(college_code_branch) %>% 
+  mutate(transfer_year = substr(enrollment_begin,1,4)) %>% 
+  select(sys_student_id, student_type, transfer_year, college_name)
+```
+
+```{r}
+transfer_universities <- unique(transfer_university_df) %>% 
+  group_by(student_type, transfer_year, college_name) %>% 
+  summarise(sys_student_id = n())
+```
+
+```{r}
+filter_by_student_type <- function(input_df, student_type){
+  output_df <- input_df %>% 
+    filter(student_type == !!student_type) %>% 
+    filter(transfer_year >= '2019') %>% 
+    pivot_wider(names_from = transfer_year, values_from = sys_student_id) %>% 
+    mutate_if(is.numeric,~ replace_na(.,0)) 
+  
+  return(output_df)
+}
+```
+
+```{r}
+enrolled <- filter_by_student_type(transfer_universities, 'enrolled')
+applicant <- filter_by_student_type(transfer_universities, 'applicant')
+prospect <- filter_by_student_type(transfer_universities, 'prospect')
+inquiry <- filter_by_student_type(transfer_universities, 'inquiry')
 ```
 
