@@ -13,10 +13,10 @@ SELECT first_name,
   END AS term_end_date
 FROM export.nsc_upload
 WHERE student_status = 'Enrolled'
+-- remove enrolled that have stopped out in the last 5 days
+AND term_end_date < CURRENT_DATE - 5
 -- remove enrolled less than 16 years old
 AND birth_date < CURRENT_DATE - 5840
---removes future start dates
-AND term_start_date <= CURRENT_DATE
 AND nullif(last_name,'') is not null
 GROUP BY first_name,
   middle_initial,
