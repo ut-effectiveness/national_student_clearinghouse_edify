@@ -1,0 +1,150 @@
+---
+title: "excel_file_uploads"
+author: "Candi Pierce"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Libraries
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+library(utHelpR)
+library(janitor)
+library(here)
+library(tidyverse)
+library(readxl)
+library(lubridate)
+library(tidyr)
+library(dplyr)
+```
+
+## Define Cohort from Banner and Slate
+### Pull data from file - mutate student_id it join depending on file you may need to change field names
+```{r}
+de_loa_df <- read.csv(here("sensitive/DE LOA Reinstatement Fall 2025.csv")) %>% 
+  mutate(nsc_id = case_when(
+    nchar(Student_ID) == 6 ~ paste0("BE000", Student_ID),
+    nchar(Student_ID) == 5 ~ paste0("BE0000", Student_ID),
+    nchar(Student_ID) == 4 ~ paste0("BE00000", Student_ID),
+    TRUE ~ paste0("BE000", Student_ID)  # Default case
+  )) %>% 
+  rename(last_name = Last_Name, first_name = First_Name, birth_date = BirthDate)
+nsc_from_edify_enrolled <- utHelpR::get_data_from_sql_file('nsc_from_edify_enrolled.sql','edify','project')
+```
+
+### If file does not have a last term_id or end date select the last completed term
+## Mutate File
+```{r}
+de_loa_upload_df <- de_loa_df %>% 
+  left_join(nsc_from_edify_enrolled, join_by(nsc_id)) %>% 
+  mutate(last_name.y = if_else(is.na(last_name.y), last_name.x, last_name.y)) %>% 
+  mutate(first_name.y = if_else(is.na(first_name.y), first_name.x, first_name.y)) %>% 
+  mutate(birth_date.y = if_else(is.na(birth_date.y), ymd(mdy(birth_date.x)), birth_date.y)) %>% 
+  mutate(term_id = if_else(is.na(term_id), '202440', term_id)) %>% 
+  mutate(term_end_date = if_else(is.na(term_end_date), as.Date("2024-12-12"), term_end_date)) %>% 
+  select(nsc_id, first_name = first_name.y, middle_initial, last_name = last_name.y, name_suffix, 
+  birth_date = birth_date.y, term_id, term_end_date)
+```
+
+
+
+## Declare Variables for NSC Submission File
+### Variables
+```{r}
+school_code <- '003671'
+branch_code <- '00'
+school_name <- 'Utah Tech University'
+query_option <- 'SE'
+```
+
+### Record Type and Variables for NSC Header
+### Header for submission file
+```{r}
+header <- tibble(header = 'H1',
+                 school_code = school_code,
+                 branch_code = branch_code,
+                 school_name = str_pad(school_name, width = 20, side = "right"),
+                 file_creation_date = str_remove_all(today(), "-"),
+                 query_option = query_option,
+                 institution = 'I'
+                 )
+```
+
+
+## Function to change last names that are "." to NA
+```{r}
+change_last_name <- function(input_df){
+  output_df <- input_df %>% 
+  mutate(last_name = if_else(last_name == ".", NA, last_name))
+  
+  return(output_df)
+}
+```
+
+## Run files through to update last name from . to NA
+```{r}
+edify_enrolled <- change_last_name(de_loa_upload_df)
+```
+
+
+## Create Enrolled file for upload
+```{r}
+enrolled_file <- edify_enrolled %>% 
+  mutate(
+    detail_records = 'D1',
+    ssn = str_pad(' ',9),
+    first_name = str_sub(str_pad(str_remove_all(first_name, "[-,.*()`']"), 20, side = 'right'), 1, 20),
+    middle_initial = replace_na(substr(str_remove_all(middle_initial, "."), 1, 1), ''),
+    last_name =  str_sub(str_pad(replace_na(str_remove_all(last_name, "[-,.*()`']"), NA), 20, side = 'right'), 1, 20),
+    suffix = str_pad(replace_na(str_remove_all(name_suffix,"[-,.']"), ''), 5, side = 'right'), 
+    birth_date = str_pad(replace_na(str_remove_all(birth_date, "-"),NA), 18 , side = 'left'),
+    term_end_date = str_remove_all(term_end_date, "-"),
+    blank_column = '',
+    school_code = school_code,
+    branch_code = branch_code,
+    requester_return_field = nsc_id,
+    unique_id = duplicated(requester_return_field)
+  ) %>%
+   select (detail_records, ssn, first_name, middle_initial, last_name, suffix, birth_date, term_end_date, blank_column, school_code, branch_code, requester_return_field)
+```
+
+
+## Drop rows with NA birthdate and last_name.
+```{r}
+drop_edify_fields <- function(input_df){
+  output_df <- input_df %>% 
+  drop_na(birth_date) %>% 
+  drop_na(last_name) 
+ 
+  return(output_df)
+}
+```
+
+## Run file through function to drop NA birthdates and last names.
+```{r}
+enrolled <- drop_edify_fields(enrolled_file)
+```
+
+
+
+### Record Type and Count for NSC Trailer
+### Trailer for enrolled submission file
+```{r}
+trailer <- tibble(trailer = 'T1',
+                  records = nrow(enrolled) + 2
+                  )
+```
+
+## Generate NSC File
+```{r}
+file_name <- "se_loa_reinstatement_nsc_upload.tsv"
+file_path <- here::here('sensitive/uploads/')
+
+write_tsv(header, paste0(file_path, file_name), col_names = FALSE, na = '')
+write_tsv(enrolled, paste0(file_path, file_name), append = TRUE, na = '')
+write_tsv(trailer, paste0(file_path, file_name), append = TRUE, na = '')
+```
+
