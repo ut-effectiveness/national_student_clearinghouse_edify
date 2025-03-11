@@ -36,6 +36,7 @@ nsc_from_edify_enrolled <- utHelpR::get_data_from_sql_file('nsc_from_edify_enrol
 ```
 
 ### If file does not have a last term_id or end date select the last completed term
+## Double check students with birthdays in the 1900's the conversion may change it to 2000 causing an error in the file.
 ## Mutate File
 ```{r}
 de_loa_upload_df <- de_loa_df %>% 
