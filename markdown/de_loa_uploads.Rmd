@@ -26,7 +26,7 @@ library(dplyr)
 ```{r, warning=FALSE, message=FALSE}
 deferred_df <- read_csv("/Volumes/Share/Research/National Student Clearing House/DE_LOA_requests/LOA Clearinghouse check spring 26 list.csv") %>% 
   rename(student_id = Student_ID, last_name = Last_Name, first_name = First_Name, birth_date = BirthDate) %>% 
-  mutate(birth_date = format(as.Date(birth_date, format = "%m/%d/%y"), "%Y-%m-%d")) %>% 
+ # mutate(birth_date = format(as.Date(birth_date, format = "%m/%d/%y"), "%Y-%m-%d")) %>% 
   mutate(term_id = '202440') %>% 
   mutate(term_end_date = as.Date("2024-05-05")) 
 ```
@@ -39,8 +39,6 @@ nsc_from_edify_enrolled <- utHelpR::get_data_from_sql_file('de_loa_details.sql',
 loa_de_df <- deferred_df %>% 
   left_join(nsc_from_edify_enrolled, join_by(student_id))
 ```
-
-
 
 
 ## Declare Variables for NSC Submission File
@@ -75,7 +73,7 @@ enrolled_file <- loa_de_df %>%
     detail_records = 'D1',
     ssn = str_pad(' ',9),
     first_name = str_sub(str_pad(str_remove_all(first_name, "[-,.*()`']"), 20, side = 'right'), 1, 20),
-    middle_initial = replace_na(substr(str_remove_all(middle_initial, "."), 1, 1), ''),
+   middle_initial = replace_na(substr(str_remove_all(as.character(middle_initial), "\\."), 1, 1), ''),
     last_name =  str_sub(str_pad(replace_na(str_remove_all(last_name, "[-,.*()`']"), NA), 20, side = 'right'), 1, 20),
     suffix = str_pad(replace_na(str_remove_all(name_suffix,"[-,.']"), ''), 5, side = 'right'), 
     birth_date = str_pad(replace_na(str_remove_all(birth_date, "-"),NA), 18 , side = 'left'),
@@ -88,8 +86,6 @@ enrolled_file <- loa_de_df %>%
   ) %>%
    select (detail_records, ssn, first_name, middle_initial, last_name, suffix, birth_date, term_end_date, blank_column, school_code, branch_code, requester_return_field)
 ```
-
-
 
 
 ### Record Type and Count for NSC Trailer
