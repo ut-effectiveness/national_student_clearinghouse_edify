@@ -9,6 +9,9 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+This file is used to create the upload file for students who have requested a leave of absence through the DE LOA process. The file is uploaded to the National Student Clearinghouse for enrollment reporting. When the file is received from admissions it is stored in the /Volumes/Share/Research/National Student Clearing House/DE_LOA_requests/ directory. The returned file from NSC is stored in the same directory. Update the file name, term_id, and term_end_date as needed.
+
+This chunk loads several R libraries commonly used for data cleaning, manipulation, reading Excel files, handling dates, and managing file paths, while suppressing code output, warnings, and messages in the rendered document.
 ## Libraries
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 library(utHelpR)
@@ -21,20 +24,22 @@ library(tidyr)
 library(dplyr)
 ```
 
-
-
+This chunk reads a CSV file containing student leave-of-absence data, renames key columns, formats birth dates, and adds fixed values for term ID and term end date, while suppressing warnings and messages. 
+Update the term_id and the term_end_date as needed.
 ```{r, warning=FALSE, message=FALSE}
 deferred_df <- read_csv("/Volumes/Share/Research/National Student Clearing House/DE_LOA_requests/LOA Clearinghouse check spring 26 list.csv") %>% 
   rename(student_id = Student_ID, last_name = Last_Name, first_name = First_Name, birth_date = BirthDate) %>% 
- # mutate(birth_date = format(as.Date(birth_date, format = "%m/%d/%y"), "%Y-%m-%d")) %>% 
+  mutate(birth_date = format(as.Date(birth_date, format = "%m/%d/%y"), "%Y-%m-%d")) %>% 
   mutate(term_id = '202440') %>% 
   mutate(term_end_date = as.Date("2024-05-05")) 
 ```
 
+This code chunk retrieves data by executing the SQL file de_loa_details.sql against the edify database using the utHelpR::get_data_from_sql_file function, and stores the result in the nsc_from_edify_enrolled object.
 ```{r}
 nsc_from_edify_enrolled <- utHelpR::get_data_from_sql_file('de_loa_details.sql','edify','project')
 ```
 
+This chunk merges the deferred_df dataset with nsc_from_edify_enrolled using a left join on the student_id column, enriching the deferred student data with enrollment details from Edify.
 ```{r}
 loa_de_df <- deferred_df %>% 
   left_join(nsc_from_edify_enrolled, join_by(student_id))
@@ -63,9 +68,7 @@ header <- tibble(header = 'H1',
                  )
 ```
 
-
-
-
+This chunk transforms loa_de_df by formatting and cleaning name and date fields, padding values to meet fixed-width requirements, and selecting specific columns to prepare a standardized file for enrollment reporting.
 ## Create Enrolled file for upload
 ```{r}
 enrolled_file <- loa_de_df %>% 
@@ -96,6 +99,7 @@ trailer <- tibble(trailer = 'T1',
                   )
 ```
 
+This chunk defines the output file name and path, then writes a header, the formatted enrollment data (enrolled_file), and a trailer to a tab-separated values (TSV) file in sequence, creating a complete upload file for the National Student Clearinghouse.
 ## Generate NSC File
 ```{r}
 file_name <- "de_loa_nsc_upload.tsv"
