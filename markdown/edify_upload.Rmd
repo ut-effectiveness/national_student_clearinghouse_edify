@@ -25,10 +25,10 @@ library(data.table)
 
 ## Load Return Files
 ```{r}
-nsc_enrolled <- read.csv("/Volumes/Share/Research/National Student Clearing House/Mar 2025/003671es_616769_DETLRPT_SE_03032025162808_se_loa_nsc_enr_upload.csv")
-nsc_applicant <- read.csv("/Volumes/Share/Research/National Student Clearing House/Mar 2025/003671es_616818_DETLRPT_SE_03032025174248_sa_loa_nsc_app_upload.csv")
-nsc_inquiry <- read.csv("/Volumes/Share/Research/National Student Clearing House/Mar 2025/003671es_616810_DETLRPT_SE_03032025164229_si_loa_nsc_inq_upload.csv")
-nsc_prospect <- read.csv("/Volumes/Share/Research/National Student Clearing House/Mar 2025/003671es_616811_DETLRPT_SE_03032025170349_sp_loa_nsc_pro_upload.csv")
+nsc_enrolled <- read.csv("/Volumes/Share/Research/National Student Clearing House/Nov 2025/003671es_639938_DETLRPT_SE_11032025171509_se_loa_nsc_enr_upload.csv")
+nsc_applicant <- read.csv("/Volumes/Share/Research/National Student Clearing House/Nov 2025/003671es_639937_DETLRPT_SE_11032025172600_sa_loa_nsc_app_upload.csv")
+nsc_inquiry <- read.csv("/Volumes/Share/Research/National Student Clearing House/Nov 2025/003671es_639939_DETLRPT_SE_11032025173133_si_loa_nsc_inq_upload.csv")
+nsc_prospect <- read.csv("/Volumes/Share/Research/National Student Clearing House/Nov 2025/003671es_639860_DETLRPT_SE_11032025181000_sp_loa_nsc_pro_upload.csv")
 student_id <- utHelpR::get_data_from_sql_file('student_id.sql','edify','project')
 outcomes <- utHelpR::get_data_from_sql_file('nsc_outcomes.sql','edify','project')
 ```
@@ -90,8 +90,8 @@ joined_nsc_files <-
 
 ## Generate NSC Upload to Edify File
 ```{r}
-file_name <- "nsc_upload.csv"
-file_path <- here::here('/Volumes/Share/Research/National Student Clearing House/Mar 2025/')
+file_name <- "nsc_upload_2.csv"
+file_path <- here::here('/Volumes/Share/Research/National Student Clearing House/Nov 2025/')
 
 write_csv(joined_nsc_files, paste0(file_path, file_name))
 ```
