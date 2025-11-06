@@ -86,11 +86,14 @@ nsc_upload <- union_all(nsc_1, nsc_2) %>%
 joined_nsc_files <- 
   rbindlist(list(nsc_upload, outcomes), use.names = TRUE)
 ```
+```{r}
+joined_nsc_files[is.na(joined_nsc_files)] <- ''
+```
 
 
 ## Generate NSC Upload to Edify File
 ```{r}
-file_name <- "nsc_upload_2.csv"
+file_name <- "nsc_upload.csv"
 file_path <- here::here('/Volumes/Share/Research/National Student Clearing House/Nov 2025/')
 
 write_csv(joined_nsc_files, paste0(file_path, file_name))
