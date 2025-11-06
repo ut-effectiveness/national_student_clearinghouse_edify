@@ -81,11 +81,13 @@ nsc_upload <- union_all(nsc_1, nsc_2) %>%
   mutate_at(c('search_date','enrollment_begin','enrollment_end','enrollment_cip_1','enrollment_cip_2','graduation_date','college_sequence'), as.character)
 ```
 
-
+## Join NSC Upload with Outcomes File
 ```{r}
 joined_nsc_files <- 
   rbindlist(list(nsc_upload, outcomes), use.names = TRUE)
 ```
+
+## Removing NA values
 ```{r}
 joined_nsc_files[is.na(joined_nsc_files)] <- ''
 ```
