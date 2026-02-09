@@ -29,9 +29,13 @@ Update the term_id and the term_end_date as needed.
 ```{r, warning=FALSE, message=FALSE}
 deferred_df <- read_csv("/Volumes/Share/Research/National Student Clearing House/DE_LOA_requests/2026/LOA DE Fall 2026 Clearinghouse check.csv") %>% 
   rename(student_id = Student_ID, last_name = Last_Name, first_name = First_Name, birth_date = BirthDate) %>% 
-  mutate(birth_date = format(as.Date(birth_date, format = "%m/%d/%y"), "%Y-%m-%d")) %>% 
+  
+mutate(
+    birth_date = as.Date(birth_date, format = "%m/%d/%Y"), # note %Y
+    birth_date = format(birth_date, "%Y-%m-%d")            # if you truly need a string
+  ) %>% 
   mutate(term_id = '202620') %>% 
-  mutate(term_end_date = as.Date("2025-01-30")) 
+  mutate(term_end_date = as.Date("2025-01-30"))
 ```
 
 This code chunk retrieves data by executing the SQL file de_loa_details.sql against the edify database using the utHelpR::get_data_from_sql_file function, and stores the result in the nsc_from_edify_enrolled object.
@@ -42,7 +46,9 @@ nsc_from_edify_enrolled <- utHelpR::get_data_from_sql_file('de_loa_details.sql',
 This chunk merges the deferred_df dataset with nsc_from_edify_enrolled using a left join on the student_id column, enriching the deferred student data with enrollment details from Edify.
 ```{r}
 loa_de_df <- deferred_df %>% 
-  left_join(nsc_from_edify_enrolled, join_by(student_id))
+  left_join(nsc_from_edify_enrolled, join_by(student_id)) %>% 
+  select(student_id, first_name, middle_initial, last_name, name_suffix, birth_date, term_id, term_end_date)
+  
 ```
 
 
