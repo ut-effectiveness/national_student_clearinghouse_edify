@@ -111,6 +111,7 @@ This chunk defines the output file name and path, then writes a header, the form
 file_name <- "de_loa_nsc_upload.tsv"
 file_path <- here::here('/Volumes/Share/Research/National Student Clearing House/DE_LOA_requests/2026/')
 
+
 write_tsv(header, paste0(file_path, file_name), col_names = FALSE, na = '')
 write_tsv(enrolled_file, paste0(file_path, file_name), append = TRUE, na = '')
 write_tsv(trailer, paste0(file_path, file_name), append = TRUE, na = '')
