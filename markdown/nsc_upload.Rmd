@@ -53,11 +53,21 @@ header <- tibble(header = 'H1',
 
 ## Function to change last names that are "." to NA
 ```{r}
-change_last_name <- function(input_df){
-  output_df <- input_df %>% 
-  mutate(last_name = if_else(last_name == ".", NA, last_name))
-  
-  return(output_df)
+change_last_name <- function(input_df) {
+  input_df %>%
+    mutate(
+      last_name = {
+        cleaned <- str_remove_all(last_name, "[^A-Za-z ]")
+        cleaned <- trimws(cleaned)
+
+        if_else(
+          is.na(cleaned) | cleaned == "" | 
+            !str_detect(cleaned, "(?=.*[A-Za-z])"),
+          NA_character_,
+          cleaned
+        )
+      }
+    )
 }
 ```
 
@@ -70,9 +80,39 @@ edify_prospect <- change_last_name(nsc_from_edify_prospect)
 ```
 
 
+## Function to change first names that are "." to NA
+```{r}
+change_first_name <- function(input_df) {
+  input_df %>%
+    mutate(
+      first_name = {
+        cleaned <- str_remove_all(first_name, "[^A-Za-z ]")
+        cleaned <- trimws(cleaned)
+
+        if_else(
+          is.na(cleaned) | cleaned == "" | 
+            !str_detect(cleaned, "(?=.*[A-Za-z])"),
+          NA_character_,
+          cleaned
+        )
+      }
+    )
+}
+
+```
+
+## Run files through to update last name from . to NA
+```{r}
+edify_enrolled_df <- change_first_name(edify_enrolled)
+edify_applicant_df <- change_first_name(edify_applicant)
+edify_inquiry_df <- change_first_name(edify_inquiry)
+edify_prospect_df <- change_first_name(edify_prospect)
+```
+
+
 ## Create Enrolled file for upload
 ```{r}
-enrolled_file <- edify_enrolled %>% 
+enrolled_file <- edify_enrolled_df %>% 
   mutate(
     detail_records = 'D1',
     ssn = str_pad(' ',9),
@@ -93,34 +133,61 @@ enrolled_file <- edify_enrolled %>%
 
 ## Function to create files for upload
 ```{r}
-create_edify_file <- function(input_df){
-  output_df <- input_df %>% 
-  mutate(
-    detail_records = 'D1',
-    ssn = str_pad(' ',9),
-    first_name = str_sub(str_pad(str_remove_all(first_name, "[-,.*()`']"), 20, side = 'right'), 1, 20),
-    middle_initial = replace_na(substr(str_remove_all(middle_initial, "."), 1, 1), ''),
-    last_name =  str_sub(str_pad(replace_na(str_remove_all(last_name, "[-,.*()`']"), NA), 20, side = 'right'), 1, 20),
-    suffix = str_pad(replace_na(str_remove_all(name_suffix,"[-,.']"), ''), 5, side = 'right'), 
-    birth_date = str_pad(replace_na(str_remove_all(birth_date, "-"),NA), 18 , side = 'left'),
-    term_start_date = str_remove_all(term_start_date, "-"),
-    blank_column = '',
-    school_code = school_code,
-    branch_code = branch_code,
-    requester_return_field = nsc_id,
-    unique_id = duplicated(requester_return_field)
-  ) %>%
-   select (detail_records, ssn, first_name, middle_initial, last_name, suffix, birth_date, term_start_date, blank_column, school_code, branch_code, requester_return_field)
-  
+create_edify_file <- function(input_df) {
+
+  output_df <- input_df %>%
+    mutate(
+      detail_records = "D1",
+      ssn = "",
+
+      first_name = {
+        cleaned <- str_remove_all(first_name, "[-,.*()`']")
+        cleaned <- trimws(cleaned)
+        cleaned <- if_else(is.na(cleaned) | cleaned == "", "UNKNOWN", cleaned)
+        str_sub(str_pad(cleaned, 20, side = "right"), 1, 20)
+      },
+
+      middle_initial = replace_na(
+        substr(str_remove_all(middle_initial, "\\."), 1, 1),
+        ""
+      ),
+
+      last_name = {
+        cleaned <- str_remove_all(last_name, "[-,.*()`']")
+        cleaned <- trimws(cleaned)
+        cleaned <- if_else(is.na(cleaned) | cleaned == "", "UNKNOWN", cleaned)
+        str_sub(str_pad(cleaned, 20, side = "right"), 1, 20)
+      },
+
+      suffix = str_pad(
+        replace_na(str_remove_all(name_suffix, "[-,.']"), ""),
+        5,
+        side = "right"
+      ),
+
+      birth_date = str_remove_all(birth_date, "-"),
+      term_start_date = str_remove_all(term_start_date, "-"),
+      blank_column = "",
+      school_code = school_code,
+      branch_code = branch_code,
+      requester_return_field = nsc_id,
+      unique_id = duplicated(requester_return_field)
+    ) %>%
+    select(
+      detail_records, ssn, first_name, middle_initial, last_name,
+      suffix, birth_date, term_start_date, blank_column,
+      school_code, branch_code, requester_return_field
+    )
+
   return(output_df)
 }
 ```
 
 ## Run files through function to create files.
 ```{r}
-applicant_file <- create_edify_file(edify_applicant)
-inquiry_file <- create_edify_file(edify_inquiry)
-prospect_file <- create_edify_file(edify_prospect)
+applicant_file <- create_edify_file(edify_applicant_df)
+inquiry_file <- create_edify_file(edify_inquiry_df)
+prospect_file <- create_edify_file(edify_prospect_df)
 ```
 
 ## Drop rows with NA birthdate and last_name.
@@ -128,7 +195,8 @@ prospect_file <- create_edify_file(edify_prospect)
 drop_edify_fields <- function(input_df){
   output_df <- input_df %>% 
   drop_na(birth_date) %>% 
-  drop_na(last_name) 
+  drop_na(last_name) %>% 
+  drop_na(first_name) 
  
   return(output_df)
 }
@@ -142,8 +210,6 @@ inquiry <- drop_edify_fields(inquiry_file)
 prospect <- drop_edify_fields(prospect_file)
 ```
 
-
-
 ### Record Type and Count for NSC Enrolled Trailer
 ### Trailer for enrolled submission file
 ```{r}
@@ -155,7 +221,7 @@ trailer <- tibble(trailer = 'T1',
 ## Generate NSC Enrolled File
 ```{r}
 file_name <- "se_loa_nsc_enr_upload.tsv"
-file_path <- here::here('/Volumes/Share/Research/National Student Clearing House/Nov 2025/')
+file_path <- here::here('/Volumes/Share/Research/National Student Clearing House/April 2026/')
 
 write_tsv(header, paste0(file_path, file_name), col_names = FALSE, na = '')
 write_tsv(enrolled, paste0(file_path, file_name), append = TRUE, na = '')
@@ -174,7 +240,7 @@ trailer <- tibble(trailer = 'T1',
 ## Generate NSC Applicant File
 ```{r}
 file_name <- "sa_loa_nsc_app_upload.tsv"
-file_path <- here::here('/Volumes/Share/Research/National Student Clearing House/Nov 2025/')
+file_path <- here::here('/Volumes/Share/Research/National Student Clearing House/April 2026/')
 
 write_tsv(header, paste0(file_path, file_name), col_names = FALSE, na = '')
 write_tsv(applicant, paste0(file_path, file_name), append = TRUE, na = '')
@@ -193,7 +259,7 @@ trailer <- tibble(trailer = 'T1',
 ## Generate NSC Inquiry File
 ```{r}
 file_name <- "si_loa_nsc_inq_upload.tsv"
-file_path <- here::here('/Volumes/Share/Research/National Student Clearing House/Nov 2025/')
+file_path <- here::here('/Volumes/Share/Research/National Student Clearing House/April 2026/')
 
 write_tsv(header, paste0(file_path, file_name), col_names = FALSE, na = '')
 write_tsv(inquiry, paste0(file_path, file_name), append = TRUE, na = '')
@@ -212,7 +278,7 @@ trailer <- tibble(trailer = 'T1',
 ## Generate NSC Prospect File
 ```{r}
 file_name <- "sp_loa_nsc_pro_upload.tsv"
-file_path <- here::here('/Volumes/Share/Research/National Student Clearing House/Nov 2025/')
+file_path <- here::here('/Volumes/Share/Research/National Student Clearing House/April 2026/')
 
 write_tsv(header, paste0(file_path, file_name), col_names = FALSE, na = '')
 write_tsv(prospect, paste0(file_path, file_name), append = TRUE, na = '')
